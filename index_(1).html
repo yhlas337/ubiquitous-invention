@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IoT Scrum тақтасы</title>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: top bar with sprint summary, tab strip, then one working panel; the board is four columns that stack on a phone */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#14202B; --muted:#566475; --line:#D9E0E8;
+  --accent:#2B45D4; --accent-ink:#FFFFFF; --good:#17703F; --warn:#9A5B00; --bad:#B3261E;
+  --dev:#2563C9; --des:#B45F08; --qa:#17703F; --team:#6B3FA0;
+  --font-body:Inter,system-ui,sans-serif; --font-head:"Space Grotesk",Inter,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1620; --surface:#16212D; --ink:#E6ECF2; --muted:#9BAABA; --line:#2A3746;
+  --accent:#8CA2FF; --accent-ink:#0E1620; --good:#4FC08A; --warn:#F0B35B; --bad:#FF8A80;
+  --dev:#7DAEFF; --des:#F0A24B; --qa:#4FC08A; --team:#BC98EE; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1620; --surface:#16212D; --ink:#E6ECF2; --muted:#9BAABA; --line:#2A3746;
+  --accent:#8CA2FF; --accent-ink:#0E1620; --good:#4FC08A; --warn:#F0B35B; --bad:#FF8A80;
+  --dev:#7DAEFF; --des:#F0A24B; --qa:#4FC08A; --team:#BC98EE; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.45;
+  padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--font-head);margin:0;text-wrap:balance}
+h1{font-size:26px;letter-spacing:-0.01em}
+h2{font-size:18px}
+h3{font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-start}
+.top .goal{max-width:62ch;color:var(--muted);margin:6px 0 0}
+.top .goal b{color:var(--ink)}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:96px}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat .v{font-family:var(--font-head);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.bar label{font-weight:600}
+.bar input[type=range]{flex:1 1 180px;min-width:120px;accent-color:var(--accent)}
+.daypill{font-family:var(--font-head);font-weight:700;font-size:16px;min-width:5ch;font-variant-numeric:tabular-nums}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:4px 9px;font-size:12px}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.note{font-size:12.5px;color:var(--muted)}
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start}
+.col{background:color-mix(in srgb,var(--line) 45%,var(--bg));border:1px solid var(--line);border-radius:12px;padding:10px;min-height:140px;display:flex;flex-direction:column;gap:8px}
+.col.over{outline:2px dashed var(--accent)}
+.colhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.colhead .cnt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;cursor:grab;border-top:4px solid var(--role)}
+.card[data-role=dev]{--role:var(--dev)}.card[data-role=des]{--role:var(--des)}.card[data-role=qa]{--role:var(--qa)}.card[data-role=team]{--role:var(--team)}
+.card .id{font-size:12px;font-weight:700;color:var(--muted)}
+.card .t{font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px}
+.chip{border-radius:999px;padding:2px 9px;font-weight:600;color:var(--role,var(--ink));border:1px solid currentColor}
+.sp{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.mv{display:flex;gap:6px}
+.mv .btn{flex:1}
+.card.done{opacity:.85}
+.card.done .t{text-decoration:line-through;text-decoration-color:var(--muted)}
+.panel{display:flex;flex-direction:column;gap:14px}
+.panel[hidden]{display:none}
+.surface{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+table{border-collapse:collapse;width:100%}
+.scroll{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld label{font-size:12px;font-weight:600;color:var(--muted)}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0}
+.timer{font-family:var(--font-head);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.entry{border-top:1px solid var(--line);padding:10px 0;display:flex;flex-direction:column;gap:2px}
+.entry:first-child{border-top:0}
+.sticky{background:color-mix(in srgb,var(--accent) 10%,var(--surface));border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow-wrap:anywhere}
+.stack{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+svg text{fill:var(--muted);font-family:var(--font-body);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px}
+.legend i{display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
+.ex{font-size:11px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.05em}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+@media (max-width:900px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:1fr}}
+@media (max-width:560px){.board,.grid2{grid-template-columns:1fr}h1{font-size:22px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>IoT Monitor · Sprint 1</h1>
+      <p class="goal"><b>Sprint Goal:</b> деректердің қауіпсіз жолын (Arduino → ESP32 → MQTT/TLS → Backend) іске қосу және минималистік UI гипотезасы бойынша алғашқы деректі алу.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="bar">
+    <label for="day">Спринт күні</label>
+    <input type="range" id="day" min="1" max="10" step="1" value="1">
+    <span class="daypill" id="daylabel">1 / 10</span>
+    <button class="btn" id="advance" title="Жоспар бойынша бір күн алға: күні жеткен тапсырмалар Done болады">Демо: бір күн алға ▶</button>
+    <button class="btn" id="reset">Бастапқы күйге қайту</button>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+
+  <section class="panel" id="p-board" role="tabpanel"></section>
+  <section class="panel" id="p-burn" role="tabpanel" hidden></section>
+  <section class="panel" id="p-backlog" role="tabpanel" hidden></section>
+  <section class="panel" id="p-daily" role="tabpanel" hidden></section>
+  <section class="panel" id="p-retro" role="tabpanel" hidden></section>
+  <section class="panel" id="p-info" role="tabpanel" hidden></section>
+</div>
+
+<script>
+(function(){
+var ROLE={dev:"Әзірлеуші",des:"Дизайнер",qa:"QA",team:"Команда"};
+var COLS=[["todo","Орындалатын","To Do"],["prog","Жұмыста","In Progress"],["qa","Тексеру","Review / QA"],["done","Дайын","Done"]];
+var TABS=[["board","Тақта"],["burn","Burndown"],["backlog","Product Backlog"],["daily","Daily Scrum"],["retro","Retrospective"],["info","Scrum туралы"]];
+function init(){return{
+  today:1,tab:"board",
+  cards:[
+   {id:"IOT-1",t:"Датчиктер және UART кадр",role:"dev",sp:3,days:"1–2",col:"prog",plan:2,done:null},
+   {id:"IOT-2",t:"API интеграциясы: ESP32 → MQTT/TLS → Backend → DB",role:"dev",sp:8,days:"3–7",col:"todo",plan:7,done:null},
+   {id:"IOT-3",t:"Шифрлауды тестілеу (TLS, HMAC)",role:"qa",sp:5,days:"5–8",col:"todo",plan:8,done:null},
+   {id:"IOT-4",t:"UI дизайны: Figma прототип",role:"des",sp:5,days:"1–3",col:"prog",plan:3,done:null},
+   {id:"IOT-5",t:"Пайдаланушымен тестілеу (5 адам)",role:"team",sp:3,days:"9–10",col:"todo",plan:10,done:null},
+   {id:"IOT-6",t:"Тест ортасы және сценарийлер",role:"qa",sp:2,days:"1–3",col:"prog",plan:3,done:null},
+   {id:"IOT-7",t:"Baseline UI және прототипті бағалау",role:"des",sp:2,days:"4–5",col:"todo",plan:5,done:null},
+   {id:"IOT-8",t:"Қателерді түзету, демо-стенд",role:"dev",sp:3,days:"8–9",col:"todo",plan:9,done:null},
+   {id:"IOT-9",t:"UI күй-экрандары: Loading, Error, Empty, Warning",role:"des",sp:3,days:"6–8",col:"todo",plan:8,done:null}],
+  backlog:[
+   {id:"PB-10",t:"Веб-дашбордты кодтау (React)",role:"dev",why:"Гипотеза расталса басымдығы артады"},
+   {id:"PB-11",t:"Telegram ескертулері",role:"dev",why:"Оператор ескертуді телефонда алады"},
+   {id:"PB-12",t:"Көп торапты қолдау",role:"dev",why:"Жүйені кеңейту"},
+   {id:"PB-13",t:"OTA жаңарту (ESP32)",role:"dev",why:"Құрылғыны қашықтан жаңарту"}],
+  daily:[
+   {day:1,who:"dev",a:"Sprint Planning аяқталды, тапсырмалар алынды",b:"UART кадрын жазамын (IOT-1)",c:"Деңгей түрлендіргіш керек болуы мүмкін",ex:true},
+   {day:1,who:"des",a:"Планингке қатыстым",b:"Дашбордтың wireframe-ін жасаймын (IOT-4)",c:"Кедергі жоқ",ex:true}],
+  retro:{start:["Мысал: күн сайын тақтаны жаңарту"],stop:["Мысал: тапсырманы ұзақ күту"],cont:["Мысал: қысқа Daily Scrum"]}
+};}
+var S=load()||init();
+function load(){try{var r=localStorage.getItem("iot-scrum-v1");return r?JSON.parse(r):null}catch(e){return null}}
+function save(){try{localStorage.setItem("iot-scrum-v1",JSON.stringify(S))}catch(e){}}
+function el(tag,attrs,kids){var n=document.createElement(tag);for(var k in (attrs||{})){var v=attrs[k];if(k==="class")n.className=v;else if(k==="text")n.textContent=v;else if(k.slice(0,2)==="on")n.addEventListener(k.slice(2),v);else if(v!==false&&v!==null&&v!==undefined)n.setAttribute(k,v===true?"":v)}
+  (kids||[]).forEach(function(c){if(c==null)return;n.appendChild(typeof c==="string"?document.createTextNode(c):c)});return n}
+function total(){return S.cards.reduce(function(a,c){return a+c.sp},0)}
+function doneSp(){return S.cards.filter(function(c){return c.col==="done"}).reduce(function(a,c){return a+c.sp},0)}
+function move(id,col){var c=S.cards.find(function(x){return x.id===id});if(!c||c.col===col)return;c.col=col;c.done=(col==="done")?S.today:null;save();render()}
+function colIndex(k){return COLS.findIndex(function(c){return c[0]===k})}
+
+function renderStats(){var t=total(),d=doneSp(),box=document.getElementById("stats");box.textContent="";
+  [["Барлығы",t+" SP"],["Дайын",d+" SP"],["Қалды",(t-d)+" SP"],["Тапсырма",S.cards.filter(function(c){return c.col==="done"}).length+" / "+S.cards.length]].forEach(function(x){
+    box.appendChild(el("div",{class:"stat"},[el("div",{class:"k",text:x[0]}),el("div",{class:"v",text:x[1]})]))})}
+
+function renderBoard(){var p=document.getElementById("p-board");p.textContent="";
+  p.appendChild(el("p",{class:"note",text:"Карточканы бағандар арасында сүйреңіз немесе ← → батырмаларын басыңыз. Done-ға өткен карточка Burndown-ды жаңартады. Бастапқы күй — 1-күнге арналған жоспар (мысал)."}));
+  var board=el("div",{class:"board"});
+  COLS.forEach(function(c){
+    var items=S.cards.filter(function(x){return x.col===c[0]});
+    var sp=items.reduce(function(a,x){return a+x.sp},0);
+    var col=el("div",{class:"col","data-col":c[0]},[el("div",{class:"colhead"},[el("div",{},[el("h3",{text:c[1]}),el("div",{class:"note",text:c[2]})]),el("span",{class:"cnt",text:items.length+" · "+sp+" SP"})])]);
+    col.addEventListener("dragover",function(e){e.preventDefault();col.classList.add("over")});
+    col.addEventListener("dragleave",function(){col.classList.remove("over")});
+    col.addEventListener("drop",function(e){e.preventDefault();col.classList.remove("over");var id=e.dataTransfer.getData("text/plain");if(id)move(id,c[0])});
+    items.forEach(function(x){
+      var i=colIndex(x.col);
+      var card=el("article",{class:"card"+(x.col==="done"?" done":""),draggable:"true","data-role":x.role},[
+        el("div",{class:"id",text:x.id}),el("div",{class:"t",text:x.t}),
+        el("div",{class:"meta"},[el("span",{class:"chip",text:ROLE[x.role]}),el("span",{text:x.days+" күн"}),el("span",{class:"sp",text:x.sp+" SP"})]),
+        el("div",{class:"mv"},[
+          el("button",{class:"btn small","aria-label":x.id+": алдыңғы бағанға",disabled:i===0,text:"←",onclick:function(){move(x.id,COLS[i-1][0])}}),
+          el("button",{class:"btn small","aria-label":x.id+": келесі бағанға",disabled:i===COLS.length-1,text:"→",onclick:function(){move(x.id,COLS[i+1][0])}})])]);
+      card.addEventListener("dragstart",function(e){e.dataTransfer.setData("text/plain",x.id)});
+      col.appendChild(card)});
+    if(!items.length)col.appendChild(el("div",{class:"note",text:"Бос. Осында карточка сүйреңіз."}));
+    board.appendChild(col)});
+  p.appendChild(board);
+  var dod=el("div",{class:"surface"},[el("h3",{text:"Definition of Done"}),el("ul",{class:"clean"},[
+    el("li",{text:"Қабылдау критерийлері орындалған"}),el("li",{text:"Код/дизайн сақталған және тексерілген (review)"}),el("li",{text:"QA тексерген, критикалық ақау жоқ"}),el("li",{text:"Нәтиже Google Docs-та құжатталған"})])]);
+  p.appendChild(dod)}
+
+function burnData(){var t=total(),ideal=[],plan=[],act=[];
+  for(var d=0;d<=10;d++){ideal.push(t-t*d/10);
+    plan.push(t-S.cards.filter(function(c){return c.plan<=d}).reduce(function(a,c){return a+c.sp},0));
+    if(d<=S.today)act.push(t-S.cards.filter(function(c){return c.done!==null&&c.done<=d}).reduce(function(a,c){return a+c.sp},0));}
+  return{t:t,ideal:ideal,plan:plan,act:act}}
+function renderBurn(){var p=document.getElementById("p-burn");p.textContent="";var b=burnData();
+  var W=720,H=360,L=48,R=700,T=20,B=310;function X(d){return L+(R-L)*d/10}function Y(v){return B-(B-T)*v/(b.t||1)}
+  var ns="http://www.w3.org/2000/svg";function s(tag,a){var n=document.createElementNS(ns,tag);for(var k in a)n.setAttribute(k,a[k]);return n}
+  var svg=s("svg",{viewBox:"0 0 "+W+" "+H,width:"100%",role:"img","aria-label":"Burndown диаграммасы: идеал, жоспар және нақты қалған Story Point"});
+  var step=Math.max(2,Math.round(b.t/6/2)*2);
+  for(var v=0;v<=b.t;v+=step){svg.appendChild(s("line",{x1:L,x2:R,y1:Y(v),y2:Y(v),stroke:"var(--line)"}));var tt=s("text",{x:L-8,y:Y(v)+4,"text-anchor":"end"});tt.textContent=v;svg.appendChild(tt)}
+  for(var d=0;d<=10;d++){var t2=s("text",{x:X(d),y:B+20,"text-anchor":"middle"});t2.textContent=d;svg.appendChild(t2)}
+  var ax=s("text",{x:(L+R)/2,y:B+42,"text-anchor":"middle"});ax.textContent="Спринт күні";svg.appendChild(ax);
+  var ay=s("text",{x:14,y:(T+B)/2,"text-anchor":"middle",transform:"rotate(-90 14 "+((T+B)/2)+")"});ay.textContent="Қалған SP";svg.appendChild(ay);
+  svg.appendChild(s("line",{x1:L,x2:L,y1:T,y2:B,stroke:"var(--muted)"}));svg.appendChild(s("line",{x1:L,x2:R,y1:B,y2:B,stroke:"var(--muted)"}));
+  svg.appendChild(s("polyline",{points:b.ideal.map(function(v,d){return X(d)+","+Y(v)}).join(" "),fill:"none",stroke:"var(--muted)","stroke-width":2,"stroke-dasharray":"7 5"}));
+  var pts=[];b.plan.forEach(function(v,d){if(d>0)pts.push(X(d)+","+Y(b.plan[d-1]));pts.push(X(d)+","+Y(v))});
+  svg.appendChild(s("polyline",{points:pts.join(" "),fill:"none",stroke:"var(--accent)","stroke-width":2.5,"stroke-linejoin":"round",opacity:.55}));
+  var ap=[];b.act.forEach(function(v,d){if(d>0)ap.push(X(d)+","+Y(b.act[d-1]));ap.push(X(d)+","+Y(v))});
+  svg.appendChild(s("polyline",{points:ap.join(" "),fill:"none",stroke:"var(--good)","stroke-width":3.5,"stroke-linejoin":"round"}));
+  var last=b.act.length-1;svg.appendChild(s("circle",{cx:X(last),cy:Y(b.act[last]),r:6,fill:"var(--good)"}));
+  var lt=s("text",{x:X(last)+10,y:Y(b.act[last])-8,style:"fill:var(--good);font-weight:700;font-size:13px"});lt.textContent=b.act[last]+" SP";svg.appendChild(lt);
+  var card=el("div",{class:"surface"},[el("h2",{text:"Burndown"}),el("p",{class:"note",text:"Нақты сызық Done-ға өткен тапсырмалардан күн сайын салынады. Күнді жоғарыдағы жүгірткімен өзгертіңіз."}),
+    el("div",{class:"legend"},[el("span",{},[el("i",{style:"border-color:var(--muted);border-top-style:dashed"}),"Идеал"]),el("span",{},[el("i",{style:"border-color:var(--accent);opacity:.55"}),"Жоспар"]),el("span",{},[el("i",{style:"border-color:var(--good)"}),"Нақты"])])]);
+  card.appendChild(svg);p.appendChild(card);
+  var rem=b.act[last],idealNow=Math.round(b.ideal[S.today]*10)/10;
+  var status=rem<=idealNow?"Графиктен алда немесе тең: жақсы.":"Идеал сызықтан артта: Scrum Master кедергілерді қарастырады.";
+  p.appendChild(el("div",{class:"surface"},[el("h3",{text:S.today+"-күн жағдайы"}),el("p",{text:"Қалған: "+rem+" SP · Идеал: "+idealNow+" SP. "+status})]))}
+
+function renderBacklog(){var p=document.getElementById("p-backlog");p.textContent="";
+  p.appendChild(el("p",{class:"note",text:"Product Backlog — бүкіл жобаның реттелген тізімі. Sprint Backlog-қа тек Product Owner басымдығымен және команда бағалауымен таңдалады."}));
+  var wrap=el("div",{class:"surface scroll"});var tb=el("table",{});
+  tb.appendChild(el("thead",{},[el("tr",{},["ID","Backlog элементі","Мәртебе","Баға"].map(function(h){return el("th",{text:h})}))]));
+  var body=el("tbody",{});
+  S.cards.forEach(function(c){body.appendChild(el("tr",{},[el("td",{text:c.id}),el("td",{text:c.t}),el("td",{text:"Sprint 1 · "+COLS[colIndex(c.col)][1]}),el("td",{text:c.sp+" SP"})]))});
+  S.backlog.forEach(function(b){
+    var sel=el("select",{"aria-label":b.id+" бағасы"},[1,2,3,5,8].map(function(n){return el("option",{value:n,text:n+" SP"})}));sel.value="3";
+    var btn=el("button",{class:"btn small",text:"Спринтке қосу",onclick:function(){S.cards.push({id:b.id,t:b.t,role:b.role,sp:+sel.value,days:"1–10",col:"todo",plan:10,done:null});S.backlog=S.backlog.filter(function(x){return x.id!==b.id});save();render()}});
+    body.appendChild(el("tr",{},[el("td",{text:b.id}),el("td",{},[b.t,el("div",{class:"note",text:b.why})]),el("td",{text:"Product Backlog"}),el("td",{},[el("div",{class:"row"},[sel,btn])])]))});
+  tb.appendChild(body);wrap.appendChild(tb);p.appendChild(wrap)}
+
+var timer={left:900,iv:null};
+function fmt(s){var m=Math.floor(s/60),r=s%60;return String(m).padStart(2,"0")+":"+String(r).padStart(2,"0")}
+function renderDaily(){var p=document.getElementById("p-daily");p.textContent="";
+  var tl=el("div",{class:"timer",id:"timer",text:fmt(timer.left),"aria-live":"off"});
+  var run=el("button",{class:"btn primary",id:"trun",text:timer.iv?"Тоқтату":"Бастау",onclick:function(){
+    if(timer.iv){clearInterval(timer.iv);timer.iv=null}else{timer.iv=setInterval(function(){timer.left=Math.max(0,timer.left-1);var t=document.getElementById("timer");if(t)t.textContent=fmt(timer.left);if(!timer.left){clearInterval(timer.iv);timer.iv=null}var b=document.getElementById("trun");if(b)b.textContent=timer.iv?"Тоқтату":"Бастау"},1000)}
+    this.textContent=timer.iv?"Тоқтату":"Бастау"}});
+  var rst=el("button",{class:"btn",text:"Қайта бастау",onclick:function(){clearInterval(timer.iv);timer.iv=null;timer.left=900;renderDaily()}});
+  p.appendChild(el("div",{class:"surface row"},[el("div",{},[el("h2",{text:"Daily Scrum · 15 минут"}),el("p",{class:"note",text:"Үш сұрақ: кеше не істедім? Бүгін не істеймін? Кедергі бар ма?"})]),el("div",{style:"margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap"},[tl,run,rst])]));
+  var who=el("select",{id:"d-who"},Object.keys(ROLE).filter(function(k){return k!=="team"}).map(function(k){return el("option",{value:k,text:ROLE[k]})}));
+  var a=el("textarea",{id:"d-a",rows:"2"}),b=el("textarea",{id:"d-b",rows:"2"}),c=el("textarea",{id:"d-c",rows:"2"});
+  var form=el("form",{class:"surface stack",onsubmit:function(e){e.preventDefault();if(!a.value.trim()&&!b.value.trim())return;
+    S.daily.unshift({day:S.today,who:who.value,a:a.value.trim(),b:b.value.trim(),c:c.value.trim()||"Кедергі жоқ"});save();renderDaily()}},[
+    el("h3",{text:"Жазба қосу · "+S.today+"-күн"}),
+    el("div",{class:"grid3"},[el("div",{class:"fld"},[el("label",{for:"d-who",text:"Кім"}),who]),el("div",{class:"fld"},[el("label",{for:"d-a",text:"Кеше не істедім?"}),a]),el("div",{class:"fld"},[el("label",{for:"d-b",text:"Бүгін не істеймін?"}),b])]),
+    el("div",{class:"fld"},[el("label",{for:"d-c",text:"Кедергі"}),c]),
+    el("div",{},[el("button",{class:"btn primary",type:"submit",text:"Қосу"})])]);
+  p.appendChild(form);
+  var log=el("div",{class:"surface"},[el("h3",{text:"Daily журналы"})]);
+  S.daily.forEach(function(d){log.appendChild(el("div",{class:"entry"},[el("div",{},[el("b",{text:d.day+"-күн · "+ROLE[d.who]}),d.ex?el("span",{class:"ex",text:"  мысал"}):null]),el("div",{text:"Кеше: "+(d.a||"—")}),el("div",{text:"Бүгін: "+(d.b||"—")}),el("div",{text:"Кедергі: "+d.c})]))});
+  p.appendChild(log)}
+
+function renderRetro(){var p=document.getElementById("p-retro");p.textContent="";
+  p.appendChild(el("div",{class:"surface"},[el("h2",{text:"Sprint Retrospective"}),el("p",{class:"note",text:"10-күн, 45 минут. Команда жұмыс тәсілін жақсартады. Start / Stop / Continue форматы."})]));
+  var g=el("div",{class:"grid3"});
+  [["start","Бастаймыз (Start)"],["stop","Тоқтатамыз (Stop)"],["cont","Жалғастырамыз (Continue)"]].forEach(function(k){
+    var inp=el("input",{type:"text",id:"r-"+k[0],"aria-label":k[1]+": жаңа жазба",placeholder:"Жаңа жазба…"});
+    var f=el("form",{class:"row",style:"flex-wrap:nowrap",onsubmit:function(e){e.preventDefault();if(!inp.value.trim())return;S.retro[k[0]].push(inp.value.trim());save();renderRetro()}},[inp,el("button",{class:"btn small",type:"submit",text:"+"})]);
+    inp.style.flex="1";inp.style.minWidth="0";inp.style.border="1px solid var(--line)";inp.style.background="var(--bg)";inp.style.borderRadius="8px";inp.style.padding="7px 10px";
+    var col=el("div",{class:"surface stack"},[el("h3",{text:k[1]}),f]);
+    S.retro[k[0]].forEach(function(t,i){col.appendChild(el("div",{class:"sticky row",style:"justify-content:space-between;flex-wrap:nowrap"},[el("span",{text:t}),el("button",{class:"btn small","aria-label":"Жазбаны жою",text:"×",onclick:function(){S.retro[k[0]].splice(i,1);save();renderRetro()}})]))});
+    g.appendChild(col)});
+  p.appendChild(g)}
+
+function renderInfo(){var p=document.getElementById("p-info");p.textContent="";
+  function tbl(h,rows){var t=el("table",{});t.appendChild(el("thead",{},[el("tr",{},h.map(function(x){return el("th",{text:x})}))]));var b=el("tbody",{});rows.forEach(function(r){b.appendChild(el("tr",{},r.map(function(x){return el("td",{text:x})})))});t.appendChild(b);return el("div",{class:"scroll"},[t])}
+  p.appendChild(el("div",{class:"surface stack"},[el("h2",{text:"Рөлдер"}),tbl(["Рөл","Жауапкершілік"],[["Product Owner","Product Backlog басымдығы, өнім құндылығы"],["Scrum Master","Scrum процесі, кедергілерді жою"],["Әзірлеушілер","Дизайнер, әзірлеуші, QA: спринт тапсырмаларын орындау"]])]));
+  p.appendChild(el("div",{class:"surface stack"},[el("h2",{text:"Артефактілер"}),tbl(["Артефакт","Міндеттеме"],[["Product Backlog","Product Goal"],["Sprint Backlog","Sprint Goal"],["Increment","Definition of Done"]])]));
+  p.appendChild(el("div",{class:"surface stack"},[el("h2",{text:"Рәсімдер"}),tbl(["Рәсім","Уақыты","Мақсаты"],[["Sprint","10 жұмыс күні","Өнім бөлігін жасау"],["Sprint Planning","1-күн, 2 сағ","Мақсат пен тапсырма таңдау"],["Daily Scrum","күн сайын, 15 мин","Барысты тексеру, кедергілер"],["Backlog Refinement","5-күн, 1 сағ","Орта спринт тексеруі"],["Sprint Review","10-күн, 1 сағ","Демо және гипотеза нәтижесі"],["Retrospective","10-күн, 45 мин","Жұмыс тәсілін жақсарту"]])]));
+  p.appendChild(el("div",{class:"surface"},[el("h3",{text:"Lean Startup гипотезасы"}),el("p",{text:"Минималистік мобильді/веб дашборд стандартты шешіммен (ThingSpeak) салыстырғанда конверсияны 20%-ға арттырады. Өлшем: тапсырманы 60 секундта көмексіз орындағандар үлесі."})]))}
+
+function renderTabs(){var t=document.getElementById("tabs");t.textContent="";
+  TABS.forEach(function(x){t.appendChild(el("button",{role:"tab","aria-selected":S.tab===x[0]?"true":"false",text:x[1],onclick:function(){S.tab=x[0];save();render()}}))});
+  TABS.forEach(function(x){document.getElementById("p-"+x[0]).hidden=S.tab!==x[0]})}
+
+function render(){document.getElementById("day").value=S.today;document.getElementById("daylabel").textContent=S.today+" / 10";
+  renderStats();renderTabs();
+  if(S.tab==="board")renderBoard();else if(S.tab==="burn")renderBurn();else if(S.tab==="backlog")renderBacklog();else if(S.tab==="daily")renderDaily();else if(S.tab==="retro")renderRetro();else renderInfo()}
+
+document.getElementById("day").addEventListener("input",function(e){S.today=+e.target.value;save();render()});
+document.getElementById("advance").addEventListener("click",function(){
+  S.today=Math.min(10,S.today+1);
+  S.cards.forEach(function(c){if(c.plan<=S.today&&c.col!=="done"){c.col="done";c.done=c.plan}
+    else if(c.col==="todo"&&S.today>=parseInt(c.days,10))c.col="prog"});
+  save();render()});
+document.getElementById("reset").addEventListener("click",function(){S=init();save();render()});
+render();
+})();
+</script>
+
+</body>
+</html>
